@@ -31,8 +31,8 @@ import argparse
 from mozinventory.inventory import MozillaInventory
 
 # subcommands
-from mozinventory.scripts import get
-subcommands = [ get ]
+from mozinventory.scripts import get, add
+subcommands = [ get, add ]
 
 def parse_config(args):
     cfgfile = os.path.expanduser("~/.mozinventoryrc")

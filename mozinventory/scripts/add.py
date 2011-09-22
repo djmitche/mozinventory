@@ -26,14 +26,25 @@
 from mozinventory.scripts import util
 
 def setup_argparse(subparsers):
-    subparser = subparsers.add_parser('get', help='get information about host')
+    subparser = subparsers.add_parser('add', help='add a new host to inventory')
 
     subparser.add_argument('hostname',
-            help="hostname to get information for")
+            help="hostname of new host")
 
-    subparser.add_argument('--search', dest='search',
-            default=False, action='store_true',
-            help="search for hosts containing the hostname as a substring")
+    subparser.add_argument('--serial', dest='serial', default=None,
+            help="serial number")
+
+    subparser.add_argument('--asset-tag', dest='asset_tag', default=None,
+            help="asset tag")
+
+    subparser.add_argument('--location', dest='location', default=None,
+            help="system location")
+
+    subparser.add_argument('--oob-ip', dest='oob_ip', default=None,
+            help="out-of-band management IP")
+
+    subparser.add_argument('--notes', dest='notes', default=None,
+            help="free-form host notes")
 
     return subparser
 
@@ -42,27 +53,15 @@ def process_args(subparser, args):
         subparser.error("a hostname is required")
 
 def main(inv, args):
-    if args.search:
-        # note bug 688617
-        rv = inv.system_hostname_search(args.hostname)
-    else:
-        rv = inv.system_read(args.hostname)
-
+    rv = inv.system_create(args.hostname)
     util.handle_error(rv)
 
-    data = rv['data']
-    keys = dict(
-        hostname = 'hostname',
-        serial = 'serial',
-        asset_tag = 'asset_tag',
-        rack_order = 'rack_order',
-        patch_panel_port = 'patch_panel_port',
-        oob_ip = 'oob_ip',
-        #allocation = 'allocation', -- bug 688627
-        switch_ports = 'switch_ports',
-        oob_switch_port = 'oob_switch_port',
-        notes = 'notes',
-    )
-    for key, name in sorted(keys.items()):
-        if key in data and data[key]:
-            print "%s=%s" % (name, data[key])
+    id = rv['data']['id']
+    data = {}
+    for k in 'serial asset_tag location oob_ip notes'.split():
+        if hasattr(args, k):
+            data[k] = getattr(args, k)
+    rv = inv.system_update(id, data)
+    util.handle_error(rv)
+
+    print "Created."
