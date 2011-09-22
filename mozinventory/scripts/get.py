@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # The contents of this file are subject to the Mozilla Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
@@ -25,34 +23,47 @@
 # you do not delete the provisions above, a recipient may use your version of
 # this file under either the MPL or the GPLv2 License.
 
-from setuptools import setup, find_packages
+from mozinventory.scripts import util
+from mozinventory import inventory
 
-descr = """Interface to Mozilla's system inventory."""
+def setup_argparse(subparsers):
+    subparser = subparsers.add_parser('get', help='get information about host')
 
-setup(
-    name='mozinventory',
-    version='1.0',
-    description=descr,
-    long_description=descr,
-    author='Rob Tucker',
-    author_email='rtucker@mozilla.com',
-    url='http://github.com/djmitche/mozinventory',
-    license='MPL-1.1',
-    packages=find_packages(),
-    include_package_data=True,
-    zip_safe=True,
-    classifiers=[
-        'Development Status :: 4 - Beta',
-        'Intended Audience :: System Administrators',
-        'License :: OSI Approved :: Mozilla Public License 1.1 (MPL 1.1)',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python',
-    ],
+    subparser.add_argument('hostname',
+            help="hostname to get information for")
 
-    entry_points = {
-        'console_scripts': [
-            'mozinventory = mozinventory.scripts.main:main'
-        ],
-    },
-)
+    subparser.add_argument('--search', dest='search',
+            default=False, action='store_true',
+            help="search for hosts containing the hostname as a substring")
 
+    return subparser
+
+def process_args(subparser, args):
+    if not args.hostname:
+        subparser.error("a hostname is required")
+
+def main(inv, args):
+    if args.search:
+        # note bug 688617
+        rv = inv.system_hostname_search(args.hostname)
+    else:
+        rv = inv.system_read(args.hostname)
+
+    util.handle_error(rv)
+
+    data = rv['data']
+    keys = dict(
+        hostname = 'hostname',
+        serial = 'serial',
+        asset_tag = 'asset_tag',
+        rack_order = 'rack_order',
+        patch_panel_port = 'patch_panel_port',
+        oob_ip = 'oob_ip',
+        #allocation = 'allocation', -- bug 688627
+        switch_ports = 'switch_ports',
+        oob_switch_port = 'oob_switch_port',
+        notes = 'notes',
+    )
+    for key, name in sorted(keys.items()):
+        if key in data and data[key]:
+            print "%s=%s" % (name, data[key])

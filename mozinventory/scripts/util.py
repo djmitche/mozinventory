@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # The contents of this file are subject to the Mozilla Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
@@ -25,34 +23,16 @@
 # you do not delete the provisions above, a recipient may use your version of
 # this file under either the MPL or the GPLv2 License.
 
-from setuptools import setup, find_packages
+import sys
 
-descr = """Interface to Mozilla's system inventory."""
-
-setup(
-    name='mozinventory',
-    version='1.0',
-    description=descr,
-    long_description=descr,
-    author='Rob Tucker',
-    author_email='rtucker@mozilla.com',
-    url='http://github.com/djmitche/mozinventory',
-    license='MPL-1.1',
-    packages=find_packages(),
-    include_package_data=True,
-    zip_safe=True,
-    classifiers=[
-        'Development Status :: 4 - Beta',
-        'Intended Audience :: System Administrators',
-        'License :: OSI Approved :: Mozilla Public License 1.1 (MPL 1.1)',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python',
-    ],
-
-    entry_points = {
-        'console_scripts': [
-            'mozinventory = mozinventory.scripts.main:main'
-        ],
-    },
-)
-
+# handle any errors from the API; this will sys.exit(1) on failure.
+def handle_error(result):
+    if result['success']:
+        return
+    if result['status_code'] == '404':
+        print >>sys.stderr, "not found"
+    elif result['status_code'] == '401':
+        print >>sys.stderr, "authorization failed"
+    else:
+        print >>sys.stderr, "HTTP error:", result
+    sys.exit(1)
