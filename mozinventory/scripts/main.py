@@ -23,6 +23,8 @@
 # you do not delete the provisions above, a recipient may use your version of
 # this file under either the MPL or the GPLv2 License.
 
+import sys
+import os
 import getpass
 import argparse
 from mozinventory.inventory import MozillaInventory
@@ -31,8 +33,28 @@ from mozinventory.inventory import MozillaInventory
 from mozinventory.scripts import get
 subcommands = [ get ]
 
+def get_password(args):
+    pwfile = os.path.expanduser("~/.mozinventory-password")
+    if os.path.exists(pwfile):
+        st = os.stat(pwfile)
+        if st.st_mode & 077:
+            print >>sys.stderr, "WARNING: %s has unsafe permissions!" % pwfile
+            sys.exit(1)
+        return open(pwfile).read().strip()
+
+    getpass.getpass("LDAP Password for %s: " % args.username)
+
+description = """\
+Runs mozinventory subcommands.
+
+This requires access to a compatible inventory server, and a username and
+password.  The password can be put in ~/.mozinventory-password, with
+permissions 0700.  If this file is not present, then the command will prompt
+for a password on every execution.
+"""
+
 def parse_options():
-    parser = argparse.ArgumentParser(description="Runs mozinventory subcommands")
+    parser = argparse.ArgumentParser(description=description)
     parser.set_defaults(_module=None)
 
     parser.add_argument('-A', '--api', dest='apiurl',
@@ -64,7 +86,7 @@ def parse_options():
     args.module.process_args(args.subparser, args)
 
     # assuming no errors yet, let's get a password
-    args.password = getpass.getpass("LDAP Password for %s: " % args.username)
+    args.password = get_password(args)
 
     # and return the results
     return args.module.main, args
