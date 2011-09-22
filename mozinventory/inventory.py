@@ -57,7 +57,7 @@ class MozillaInventory(object):
     #API Availability: v2
  
     def system_hostname_search(self, search):
-            return self.create_request('system/1/?name_search=%s' % search, 'GET')
+            return self.create_request('system/?name_search=%s' % search, 'GET')
  
     def system_create(self, hostname):
             return self.create_request('system/%s/' % hostname, 'POST')
