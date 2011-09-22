@@ -23,6 +23,8 @@
 # you do not delete the provisions above, a recipient may use your version of
 # this file under either the MPL or the GPLv2 License.
 
+import traceback
+import sys
 import urllib
 import urllib2
 import base64
@@ -101,83 +103,42 @@ class MozillaInventory(object):
             return self.create_request('keyvalue/%s/?%s' % (keyvalue_id, data), 'DELETE')
 
     def create_request(self, url, method='GET', data = None):
+        request = urllib2.Request(self.url + url, data)
+        base64string = base64.encodestring('%s:%s' % (self.username, self.password)).replace('\n', '')
+        if self.debug:
+            print "Authorization: Basic", base64string
+        request.add_header("Authorization", "Basic %s" % base64string)  
+
+        if self.debug:
+            print "%s %s" % (method, self.url + url)
+            if data:
+                pprint.pprint(data)
+        request.get_method = lambda: method
+
+        result = {'success':False}
         try:
-            request = urllib2.Request(self.url + url, data)
-            base64string = base64.encodestring('%s:%s' % (self.username, self.password)).replace('\n', '')
-            if self.debug:
-                print "Authorization: Basic", base64string
-            request.add_header("Authorization", "Basic %s" % base64string)  
-
-            if self.debug:
-                print "%s %s" % (method, self.url + url)
-                if data:
-                    pprint.pprint(data)
-            request.get_method = lambda: method
-
-            result = {'success':False}
-            try:
-                result_string = urllib2.urlopen(request).read()
-                if self.debug:
-                    print "RESULT:"
-                    print result_string
-                result_string = result_string.split("= ")[1]
- 
-                result['data'] = json.loads(result_string)
-                if result['data'] is None:
-                    result['success'] = False
-                elif len(result['data']) is 0:
-                    result['success'] = False
-                else:
-                    result['success'] = True
-            except:
- 
-                result['data'] = json.loads(urllib2.urlopen(request).read())
-                if result['data'] is None:
-                    result['success'] = False
-                elif len(result['data']) is 0:
-                    result['success'] = False
-                else:
-                    result['success'] = True
-            return result
+            result_string = urllib2.urlopen(request).read()
         except urllib2.HTTPError, e:
+            if self.debug:
+                print "ERROR:"
+                traceback.print_exc()
             return {"success": False, "status_code":str(e.code), "error": e}
 
-class SystemKeyInfo(object):
+        if self.debug:
+            print "RESULT:"
+            print result_string
 
-    def __init__(self, path):
-        self.path = path
+        # try to strip off a leading JSONP header
+        try:
+            result_string = result_string.split("= ")[1]
+        except:
+            pass
 
-system_keys = dict(
-    serial = SystemKeyInfo('serial'),
-    asset_tag = SystemKeyInfo('asset_tag'),
-    releng_trustlevel = SystemKeyInfo('releng_trustlevel'),
-    releng_role = SystemKeyInfo('releng_role'),
-    created_on = SystemKeyInfo('created_on'),
-    licenses = SystemKeyInfo('licenses'),
-    id = SystemKeyInfo('id'),
-    releng_distro = SystemKeyInfo('releng_distro'),
-    rack_order = SystemKeyInfo('rack_order'),
-    hostname = SystemKeyInfo('hostname'),
-    patch_panel_port = SystemKeyInfo('patch_panel_port'),
-    is_switch = SystemKeyInfo('is_switch'),
-    purchase_date = SystemKeyInfo('purchase_date'),
-    purchase_price = SystemKeyInfo('purchase_price'),
-    releng_bitlength = SystemKeyInfo('releng_bitlength'),
-    oob_ip = SystemKeyInfo('oob_ip'),
-    is_dns_server = SystemKeyInfo('is_dns_server'),
-    allocation = SystemKeyInfo('allocation'),
-    switch_ports = SystemKeyInfo('switch_ports'),
-    #system_rack = SystemKeyInfo('system_rack'),
-    releng_purpose = SystemKeyInfo('releng_purpose'),
-    releng_datacenter = SystemKeyInfo('releng_datacenter'),
-    operating_system = SystemKeyInfo('operating_system'),
-    is_nagios_server = SystemKeyInfo('is_nagios_server'),
-    is_puppet_server = SystemKeyInfo('is_puppet_server'),
-    is_dhcp_server = SystemKeyInfo('is_dhcp_server'),
-    oob_switch_port = SystemKeyInfo('oob_switch_port'),
-    #server_model = SystemKeyInfo('server_model'),
-    #system_status = SystemKeyInfo('system_status'),
-    change_password = SystemKeyInfo('change_password'),
-    updated_on = SystemKeyInfo('updated_on'),
-    notes = SystemKeyInfo('notes'),
-)
+        result['data'] = json.loads(result_string)
+        if result['data'] is None:
+            result['success'] = False
+        elif len(result['data']) is 0:
+            result['success'] = False
+        else:
+            result['success'] = True
+        return result
