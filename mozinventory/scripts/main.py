@@ -23,6 +23,7 @@
 # you do not delete the provisions above, a recipient may use your version of
 # this file under either the MPL or the GPLv2 License.
 
+import ConfigParser
 import sys
 import os
 import getpass
@@ -33,24 +34,45 @@ from mozinventory.inventory import MozillaInventory
 from mozinventory.scripts import get
 subcommands = [ get ]
 
-def get_password(args):
-    pwfile = os.path.expanduser("~/.mozinventory-password")
-    if os.path.exists(pwfile):
-        st = os.stat(pwfile)
-        if st.st_mode & 077:
-            print >>sys.stderr, "WARNING: %s has unsafe permissions!" % pwfile
-            sys.exit(1)
-        return open(pwfile).read().strip()
+def parse_config(args):
+    cfgfile = os.path.expanduser("~/.mozinventoryrc")
 
-    getpass.getpass("LDAP Password for %s: " % args.username)
+    # check perms, since this might contain a password
+    if os.path.exists(cfgfile):
+        st = os.stat(cfgfile)
+        if st.st_mode & 077:
+            print >>sys.stderr, "WARNING: %s has unsafe permissions!" % cfgfile
+            sys.exit(1)
+
+    args.password = ''
+
+    cfg = ConfigParser.RawConfigParser()
+    cfg.read([cfgfile])
+    if cfg.has_option('auth', 'password'):
+        args.password = cfg.get('auth', 'password')
+
+    if cfg.has_option('auth', 'username') and not args.username:
+        args.username = cfg.get('auth', 'username')
+
+    if cfg.has_option('debug', 'api') and not args.debug:
+        args.debug = True
 
 description = """\
 Runs mozinventory subcommands.
 
 This requires access to a compatible inventory server, and a username and
-password.  The password can be put in ~/.mozinventory-password, with
-permissions 0700.  If this file is not present, then the command will prompt
-for a password on every execution.
+password. 
+
+Configuration is in ~/.mozinventoryrc.  This file must have mode 0700.  It is
+an ini-style file supporting the following arguments:
+
+    [auth]
+    username - for Mozilla, the long LDAP form
+    password - password for username
+
+    [debug]
+    api - set to '1' to debug the inventory API interface
+
 """
 
 def parse_options():
@@ -82,11 +104,15 @@ def parse_options():
     if not args.module:
         parser.error("No subcommand specified")
 
+    # parse the configs
+    parse_config(args)
+
+    # ensure we have a password
+    if not args.password:
+        args.password = getpass.getpass("LDAP Password for %s: " % args.username)
+
     # let it process its own args
     args.module.process_args(args.subparser, args)
-
-    # assuming no errors yet, let's get a password
-    args.password = get_password(args)
 
     # and return the results
     return args.module.main, args
