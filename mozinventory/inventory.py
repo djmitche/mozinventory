@@ -57,50 +57,50 @@ class MozillaInventory(object):
     #API Availability: v2
  
     def system_hostname_search(self, search):
-            return self.create_request('system/?name_search=%s' % search, 'GET')
+            return self.create_request('v2/system/1/?name_search=%s' % search, 'GET')
  
     def system_create(self, hostname):
-            return self.create_request('system/%s/' % hostname, 'POST')
+            return self.create_request('v2/system/%s/' % hostname, 'POST')
  
     def system_delete(self, system_id):
-            return self.create_request('system/%s/' % system_id, 'DELETE')
+            return self.create_request('v2/system/%s/' % system_id, 'DELETE')
  
     def system_update(self, system_id, data):
-            return self.create_request('system/%s/' % system_id, 'PUT', self.get_data(data))
+            return self.create_request('v2/system/%s/' % system_id, 'PUT', self.get_data(data))
  
     def network_adapter_create(self, system_id, data):
-            return self.create_request('networkadapter/%s/' % system_id, 'POST', self.get_data(data))
+            return self.create_request('v2/networkadapter/%s/' % system_id, 'POST', self.get_data(data))
  
     def network_adapter_update(self, network_adapter_id, data):
-            return self.create_request('networkadapter/%s/' % network_adapter_id, 'PUT', self.get_data(data))
+            return self.create_request('v2/networkadapter/%s/' % network_adapter_id, 'PUT', self.get_data(data))
  
     def network_adapter_delete(self, network_adapter_id):
-            return self.create_request('networkadapter/%s/' % network_adapter_id, 'DELETE')
+            return self.create_request('v2/networkadapter/%s/' % network_adapter_id, 'DELETE')
  
     def keyvalue_search(self, data):
-            return self.create_request('keyvalue/?%s' % self.get_data(data), 'GET')
+            return self.create_request('v2/keyvalue/?%s' % self.get_data(data), 'GET')
  
     def keyvalue_create(self, keyvalue_id, data):
-            return self.create_request('keyvalue/%s/' % keyvalue_id, 'POST', self.get_data(data))
+            return self.create_request('v2/keyvalue/%s/' % keyvalue_id, 'POST', self.get_data(data))
  
     def keyvalue_read(self, keyvalue_id):
-            return self.create_request('keyvalue/%s/' % keyvalue_id, 'GET')
+            return self.create_request('v2/keyvalue/%s/' % keyvalue_id, 'GET')
  
     def keyvalue_update(self, keyvalue_id, data):
-            return self.create_request('keyvalue/%s/' % keyvalue_id, 'PUT', self.get_data(data))
+            return self.create_request('v2/keyvalue/%s/' % keyvalue_id, 'PUT', self.get_data(data))
              
     def keyvalue_delete(self, keyvalue_id):
-            return self.create_request('keyvalue/%s/' % keyvalue_id, 'DELETE')
+            return self.create_request('v2/keyvalue/%s/' % keyvalue_id, 'DELETE')
  
     def delete_adapter(self, keyvalue_id, data):
             data['key_type'] = 'delete_network_adapter'
             data = self.get_data(data)
-            return self.create_request('keyvalue/%s/?%s' % (keyvalue_id, data), 'DELETE')
+            return self.create_request('v2/keyvalue/%s/?%s' % (keyvalue_id, data), 'DELETE')
  
     def delete_all_adapters(self, keyvalue_id, data):
             data['key_type'] = 'delete_all_network_adapters'
             data = self.get_data(data)
-            return self.create_request('keyvalue/%s/?%s' % (keyvalue_id, data), 'DELETE')
+            return self.create_request('v2/keyvalue/%s/?%s' % (keyvalue_id, data), 'DELETE')
 
     def create_request(self, url, method='GET', data = None):
         request = urllib2.Request(self.url + url, data)
