@@ -80,7 +80,7 @@ def parse_options():
     parser.set_defaults(_module=None)
 
     parser.add_argument('-A', '--api', dest='apiurl',
-            default='http://inventory.mozilla.org/api/',
+            default='https://inventory.mozilla.org/api/',
             help="""URL of the inventory API""")
 
     parser.add_argument('-U', '--username', dest='username',
