@@ -23,24 +23,25 @@
 # you do not delete the provisions above, a recipient may use your version of
 # this file under either the MPL or the GPLv2 License.
 
-import sys
+from mozinventory.scripts import util
 
-# handle any errors from the API; this will sys.exit(1) on failure.
-def handle_error(result):
-    if result['success']:
-        return
-    if result['status_code'] == '404':
-        print >>sys.stderr, "not found"
-    elif result['status_code'] == '401':
-        print >>sys.stderr, "authorization failed"
-    else:
-        print >>sys.stderr, "HTTP error:", result
-    sys.exit(1)
+def setup_argparse(subparsers):
+    subparser = subparsers.add_parser('systemrack_get', help='get information about host')
 
-def generic_output(data):
-    for key in data.iterkeys():
-        if isinstance(data[key], dict):
-            for inner_key in data[key].iterkeys():
-                print "%s_%s=%s" % (key, inner_key, data[key][inner_key])
-        else:
-            print "%s=%s" % (key, data[key])
+    subparser.add_argument('systemrack',
+            help="system rack to get information for")
+
+
+    return subparser
+
+def process_args(subparser, args):
+    if not args.systemrack:
+        subparser.error("a system rack is required")
+
+def main(inv, args):
+    rv = inv.systemrack_read(args.systemrack)
+
+    util.handle_error(rv)
+
+    data = rv['data']
+    util.generic_output(data)

@@ -102,8 +102,8 @@ class MozillaInventory(object):
             data = self.get_data(data)
             return self.create_request('v2/keyvalue/%s/?%s' % (keyvalue_id, data), 'DELETE')
 
-    def system_rack_list(self, system_rack_id):
-            return self.create_request('v2/system_rack/%s/' % (system_rack_id), 'GET')
+    def systemrack_read(self, system_rack_id):
+            return self.create_request('v2/systemrack/%s/' % (system_rack_id), 'GET')
 
     def create_request(self, url, method='GET', data = None):
         request = urllib2.Request(self.url + url, data)

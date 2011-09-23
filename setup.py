@@ -31,7 +31,7 @@ descr = """Interface to Mozilla's system inventory."""
 
 setup(
     name='mozinventory',
-    version='1.0',
+    version='1.02',
     description=descr,
     long_description=descr,
     author='Rob Tucker',
