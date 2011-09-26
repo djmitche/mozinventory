@@ -26,7 +26,7 @@
 from mozinventory.scripts import util
 
 def setup_argparse(subparsers):
-    subparser = subparsers.add_parser('system_get', help='get information about host')
+    subparser = subparsers.add_parser('get', help='get information about host')
 
     subparser.add_argument('hostname',
             help="hostname to get information for")

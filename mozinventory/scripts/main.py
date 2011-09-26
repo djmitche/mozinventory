@@ -30,9 +30,13 @@ import getpass
 import argparse
 from mozinventory.inventory import MozillaInventory
 
-# subcommands
-from mozinventory.scripts import system_get, system_add, systemrack_get
-subcommands = [ system_get, system_add, systemrack_get ]
+subcommands = []
+
+from mozinventory.scripts import get, add
+subcommands.extend([ get, add ])
+
+from mozinventory.scripts import systemrack_get
+subcommands.extend([ systemrack_get ])
 
 def parse_config(args):
     cfgfile = os.path.expanduser("~/.mozinventoryrc")
@@ -125,5 +129,6 @@ def main():
 
     # for now, this raises exceptions for errors
     func(inv, args)
+
 if __name__ == '__main__':
     main()
