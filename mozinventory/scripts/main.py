@@ -58,10 +58,10 @@ def parse_config(args):
         args.debug = True
 
 description = """\
-Runs mozinventory subcommands.
+An interface to the Mozilla inventory tool.
 
-This requires access to a compatible inventory server, and a username and
-password. 
+This utility requires access to a compatible inventory server, and a username
+and password. 
 
 Configuration is in ~/.mozinventoryrc.  This file must have mode 0700.  It is
 an ini-style file supporting the following arguments:
@@ -73,10 +73,12 @@ an ini-style file supporting the following arguments:
     [debug]
     api - set to '1' to debug the inventory API interface
 
+Use `%(prog)s command --help` to see help for the subcommands shown below.
 """
 
 def parse_options():
-    parser = argparse.ArgumentParser(description=description)
+    parser = argparse.ArgumentParser(description=description,
+            formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.set_defaults(_module=None)
 
     parser.add_argument('-A', '--api', dest='apiurl',
