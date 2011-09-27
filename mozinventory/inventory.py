@@ -23,8 +23,8 @@
 # you do not delete the provisions above, a recipient may use your version of
 # this file under either the MPL or the GPLv2 License.
 
-import traceback
 import sys
+import traceback
 import urllib
 import urllib2
 import base64
@@ -37,6 +37,8 @@ class MozillaInventory(object):
         self.username = username
         self.password = password
         self.request = None
+        if url[-1] != '/':
+            url += '/'
         self.url = url
         self.debug = debug
 
@@ -47,15 +49,20 @@ class MozillaInventory(object):
             data = data
         return data
 
-    #Read a system by either it's hostname from inventory or by it's id number
-    #API Availability: v1
+
+    # API Availability: v1
+
  
+    # Read a system by either it's hostname from inventory or by it's id number
     def system_read(self, search):
             return self.create_request('system/%s/' % search, 'GET')
  
-    #Returns a list of systems by pattern searching. Does not do true regex search.
-    #API Availability: v2
+
+    # API Availability: v2
+
+    # systems
  
+    # Returns a list of systems by pattern searching. Does not do true regex search.
     def system_hostname_search(self, search):
             return self.create_request('v2/system/1/?name_search=%s' % search, 'GET')
  
@@ -68,6 +75,8 @@ class MozillaInventory(object):
     def system_update(self, system_id, data):
             return self.create_request('v2/system/%s/' % system_id, 'PUT', self.get_data(data))
  
+    # adapters
+
     def network_adapter_create(self, system_id, data):
             return self.create_request('v2/networkadapter/%s/' % system_id, 'POST', self.get_data(data))
  
@@ -77,6 +86,21 @@ class MozillaInventory(object):
     def network_adapter_delete(self, network_adapter_id):
             return self.create_request('v2/networkadapter/%s/' % network_adapter_id, 'DELETE')
  
+    # TODO: how is this different from network_adapter_delete?
+    # TODO: why does this take data?
+    def delete_adapter(self, keyvalue_id, data):
+            data['key_type'] = 'delete_network_adapter'
+            data = self.get_data(data)
+            return self.create_request('v2/keyvalue/%s/?%s' % (keyvalue_id, data), 'DELETE')
+
+    # TODO: why does this take data?
+    def delete_all_adapters(self, keyvalue_id, data):
+            data['key_type'] = 'delete_all_network_adapters'
+            data = self.get_data(data)
+            return self.create_request('v2/keyvalue/%s/?%s' % (keyvalue_id, data), 'DELETE')
+
+    # per-system key-value
+
     def keyvalue_search(self, data):
             return self.create_request('v2/keyvalue/?%s' % self.get_data(data), 'GET')
  
@@ -92,18 +116,12 @@ class MozillaInventory(object):
     def keyvalue_delete(self, keyvalue_id):
             return self.create_request('v2/keyvalue/%s/' % keyvalue_id, 'DELETE')
  
-    def delete_adapter(self, keyvalue_id, data):
-            data['key_type'] = 'delete_network_adapter'
-            data = self.get_data(data)
-            return self.create_request('v2/keyvalue/%s/?%s' % (keyvalue_id, data), 'DELETE')
- 
-    def delete_all_adapters(self, keyvalue_id, data):
-            data['key_type'] = 'delete_all_network_adapters'
-            data = self.get_data(data)
-            return self.create_request('v2/keyvalue/%s/?%s' % (keyvalue_id, data), 'DELETE')
+    # system racks
 
     def systemrack_read(self, system_rack_id):
-            return self.create_request('v2/systemrack/%s/' % (system_rack_id), 'GET')
+            return self.create_request('v2/systemrack/%s/' % (system_rack_id,), 'GET')
+
+    # private
 
     def create_request(self, url, method='GET', data = None):
         request = urllib2.Request(self.url + url, data)
@@ -137,7 +155,14 @@ class MozillaInventory(object):
         except:
             pass
 
-        result['data'] = json.loads(result_string)
+        try:
+            result['data'] = json.loads(result_string)
+        except:
+            result['success'] = False
+            result['status_code'] = '999'
+            result['error'] = sys.exc_info()[1]
+            return result
+
         if result['data'] is None:
             result['success'] = False
         elif len(result['data']) is 0:

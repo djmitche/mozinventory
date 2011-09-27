@@ -23,45 +23,40 @@
 # you do not delete the provisions above, a recipient may use your version of
 # this file under either the MPL or the GPLv2 License.
 
-from mozinventory.scripts import util
+import mock
+import argparse
+import unittest
+import contextlib
 
-def setup_argparse(subparsers):
-    subparser = subparsers.add_parser('add', help='add a new host to inventory')
+class ScriptTestCase(unittest.TestCase):
 
-    subparser.add_argument('hostname',
-            help="hostname of new host")
+    # set this in subclasses so we know which module to test
+    script_module = None
 
-    subparser.add_argument('--serial', dest='serial', default=None,
-            help="serial number")
+    def setUp(self):
+        self.parser = p = argparse.ArgumentParser()
+        self.subparsers = sps = p.add_subparsers(title='subcommands')
+        self.subparser = sp = self.script_module.setup_argparse(sps)
+        sp.set_defaults(module=self.script_module, subparser=sp)
 
-    subparser.add_argument('--asset-tag', dest='asset_tag', default=None,
-            help="asset tag")
+        self.inv = mock.Mock(name="MozillaInventory")
 
-    subparser.add_argument('--location', dest='location', default=None,
-            help="system location")
+    def run_script(self, *args):
+        args = self.parser.parse_args(list(args))
+        self.script_module.process_args(self.subparser, args)
+        self.script_module.main(self.inv, args)
 
-    subparser.add_argument('--oob-ip', dest='oob_ip', default=None,
-            help="out-of-band management IP")
+@contextlib.contextmanager
+def capture_stdout(dest):
+    """
+    Called as a context manager, this will capture stdout into a list named
+    'dest' -- at least the data written by `sys.stdout.write()`.
+    """
+    dest[:] = []
+    with mock.patch('sys.stdout.write') as write:
+        def keep(s):
+            dest.append(s)
+        write.side_effect = keep
 
-    subparser.add_argument('--notes', dest='notes', default=None,
-            help="free-form host notes")
-
-    return subparser
-
-def process_args(subparser, args):
-    if not args.hostname:
-        subparser.error("a hostname is required")
-
-def main(inv, args):
-    rv = inv.system_create(args.hostname)
-    util.handle_error(rv)
-
-    id = rv['data']['id']
-    data = {}
-    for k in 'serial asset_tag location oob_ip notes'.split():
-        if hasattr(args, k) and getattr(args, k) is not None:
-            data[k] = getattr(args, k)
-    rv = inv.system_update(id, data)
-    util.handle_error(rv)
-
-    print "Created."
+        # do the body of the with statement
+        yield
