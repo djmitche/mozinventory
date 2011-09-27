@@ -23,8 +23,8 @@
 # you do not delete the provisions above, a recipient may use your version of
 # this file under either the MPL or the GPLv2 License.
 
-import traceback
 import sys
+import traceback
 import urllib
 import urllib2
 import base64
@@ -37,6 +37,8 @@ class MozillaInventory(object):
         self.username = username
         self.password = password
         self.request = None
+        if url[-1] != '/':
+            url += '/'
         self.url = url
         self.debug = debug
 
@@ -137,7 +139,14 @@ class MozillaInventory(object):
         except:
             pass
 
-        result['data'] = json.loads(result_string)
+        try:
+            result['data'] = json.loads(result_string)
+        except:
+            result['success'] = False
+            result['status_code'] = '999'
+            result['error'] = sys.exc_info()[1]
+            return result
+
         if result['data'] is None:
             result['success'] = False
         elif len(result['data']) is 0:
