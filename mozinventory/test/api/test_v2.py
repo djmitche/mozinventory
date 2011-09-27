@@ -29,6 +29,8 @@ import nose.tools
 
 inv = inventory.MozillaInventory('me', 'pw', 'http://x/')
 
+# systems
+
 @patch_create_request
 def test_system_hostname_search(requests):
     assert inv.system_hostname_search('foo') == "request-1"
@@ -57,6 +59,8 @@ def test_system_update(requests):
         ( 'PUT', 'v2/system/12/', 'a=b&x=y'),
     ])
 
+# adapters
+
 @patch_create_request
 def test_network_adapter_create(requests):
     assert inv.network_adapter_create(12, dict(a='b', x='y')) == "request-1"
@@ -78,4 +82,62 @@ def test_network_adapter_update(requests):
         ( 'PUT', 'v2/networkadapter/12/', 'a=b&x=y'),
     ])
 
-# TODO: remainder of v2 tests
+@patch_create_request
+def test_delete_adapter(requests):
+    assert inv.delete_adapter('natasha', dict(a='b')) == "request-1"
+    nose.tools.eq_(requests, [
+        ( 'DELETE', 'v2/keyvalue/natasha/?a=b&key_type=delete_network_adapter'),
+    ])
+
+@patch_create_request
+def test_delete_all_adapters(requests):
+    assert inv.delete_all_adapters('natasha', dict(a='b')) == "request-1"
+    nose.tools.eq_(requests, [
+        ( 'DELETE', 'v2/keyvalue/natasha/?a=b&key_type=delete_all_network_adapters'),
+    ])
+
+# per-system key-value
+
+@patch_create_request
+def test_keyvalue_search(requests):
+    assert inv.keyvalue_search(dict(a='b', x='y')) == "request-1"
+    nose.tools.eq_(requests, [
+        ( 'GET', 'v2/keyvalue/?a=b&x=y'),
+    ])
+
+@patch_create_request
+def test_keyvalue_create(requests):
+    assert inv.keyvalue_create('natasha', dict(a='b', x='y')) == "request-1"
+    nose.tools.eq_(requests, [
+        ( 'POST', 'v2/keyvalue/natasha/', 'a=b&x=y'),
+    ])
+
+@patch_create_request
+def test_keyvalue_read(requests):
+    assert inv.keyvalue_read('natasha') == "request-1"
+    nose.tools.eq_(requests, [
+        ( 'GET', 'v2/keyvalue/natasha/'),
+    ])
+
+@patch_create_request
+def test_keyvalue_delete(requests):
+    assert inv.keyvalue_delete('natasha') == "request-1"
+    nose.tools.eq_(requests, [
+        ( 'DELETE', 'v2/keyvalue/natasha/'),
+    ])
+
+@patch_create_request
+def test_keyvalue_update(requests):
+    assert inv.keyvalue_update('natasha', dict(a='b', x='y')) == "request-1"
+    nose.tools.eq_(requests, [
+        ( 'PUT', 'v2/keyvalue/natasha/', 'a=b&x=y'),
+    ])
+
+# racks
+
+@patch_create_request
+def test_systemrack_read(requests):
+    assert inv.systemrack_read('rackid') == "request-1"
+    nose.tools.eq_(requests, [
+        ( 'GET', 'v2/systemrack/rackid/'),
+    ])
