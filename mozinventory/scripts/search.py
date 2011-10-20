@@ -27,30 +27,57 @@ import sys
 from mozinventory.scripts import util
 
 def setup_argparse(subparsers):
-    subparser = subparsers.add_parser('get', help='get information about host')
+    subparser = subparsers.add_parser('search', help='get information for host by searching by parameters')
 
-    subparser.add_argument('hostname',
-            help="hostname to get information for")
+    subparser.add_argument('--asset-tag', dest='asset_tag', default=None,
+            help="asset tag number of system")
+            
+    subparser.add_argument('--serial', dest='serial', default=None,
+            help="serial number of system")
 
-    subparser.add_argument('--search-hostname', dest='search_hostname',
-            default=False, action='store_true',
-            help="search for hosts containing the hostname as a substring")
+    subparser.add_argument('--oob-ip', dest='oob_ip', default=None,
+            help="oob ip address of system")
 
+    subparser.add_argument('--system-rack-id', dest='system_rack_id', default=None,
+            help="system_rack_id of system")
+
+    subparser.add_argument('--rack-order', dest='rack_order', default=None,
+            help="rack_order of system")
     return subparser
 
 def process_args(subparser, args):
-    if not args.hostname and not args_search_hostname:
-        subparser.error("a hostname is required or --search-hostname argument is required")
+    if not args.asset_tag and not args.oob_ip and not args.serial and not args.system_rack_id and not args.rack_order:
+        subparser.error("a search criteria is required")
 
 def main(inv, args):
-    if args.search_hostname:
-        rv = inv.system_search_hostname(args.search_hostname)
-    else:
-        rv = inv.system_read(args.hostname)
+    criteria = {}
+    has_search = False
+    if args.asset_tag:
+        has_search = True
+        criteria['asset_tag'] = args.asset_tag
+
+    if args.serial:
+        has_search = True
+        criteria['serial'] = args.serial
+
+    if args.system_rack_id:
+        has_search = True
+        criteria['system_rack_id'] = args.system_rack_id
+
+    if args.rack_order:
+        has_search = True
+        criteria['rack_order'] = args.rack_order
+
+    if args.oob_ip:
+        has_search = True
+        criteria['oob_ip'] = args.oob_ip
+
+    if has_search:
+        rv = inv.system_search(criteria)
 
     util.handle_error(rv)
 
-    if args.search_hostname:
+    if has_search:
         data = rv['data']
         if not data:
             print >>sys.stderr, "not found."

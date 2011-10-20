@@ -32,11 +32,9 @@ from mozinventory.inventory import MozillaInventory
 
 subcommands = []
 
-from mozinventory.scripts import get, add
-subcommands.extend([ get, add ])
+from mozinventory.scripts import get, add, systemrack_get, search
+subcommands.extend([ get, add, systemrack_get, search])
 
-from mozinventory.scripts import systemrack_get
-subcommands.extend([ systemrack_get ])
 
 def parse_config(args):
     cfgfile = os.path.expanduser("~/.mozinventoryrc")

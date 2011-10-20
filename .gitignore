@@ -2,3 +2,5 @@ build/
 dist/
 *.pyc
 mozinventory.egg-info/
+*.swp
+*.swo
