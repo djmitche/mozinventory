@@ -66,6 +66,10 @@ class MozillaInventory(object):
     def system_hostname_search(self, search):
             return self.create_request('v2/system/1/?name_search=%s' % search, 'GET')
  
+    def system_search(self, data):
+            data['search'] = True
+            return self.create_request('v2/system/1/?%s' % (self.get_data(data)), 'GET')
+
     def system_create(self, hostname):
             return self.create_request('v2/system/%s/' % hostname, 'POST')
  
