@@ -23,45 +23,47 @@
 # you do not delete the provisions above, a recipient may use your version of
 # this file under either the MPL or the GPLv2 License.
 
-from mozinventory.scripts import util
+import argparse
+from mozinventory.scripts import util, base
 
-def setup_argparse(subparsers):
-    subparser = subparsers.add_parser('add', help='add a new host to inventory')
+class Add(base.Subcommand):
 
-    subparser.add_argument('hostname',
-            help="hostname of new host")
+    oneline = "Add a new system to inventory"
 
-    subparser.add_argument('--serial', dest='serial', default=None,
-            help="serial number")
+    def get_parser(self):
+        parser = argparse.ArgumentParser(description=self.oneline,
+                formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    subparser.add_argument('--asset-tag', dest='asset_tag', default=None,
-            help="asset tag")
+        parser.add_argument('hostname',
+                help="hostname of new host")
 
-    subparser.add_argument('--location', dest='location', default=None,
-            help="system location")
+        parser.add_argument('--serial', dest='serial', default=None,
+                help="serial number")
 
-    subparser.add_argument('--oob-ip', dest='oob_ip', default=None,
-            help="out-of-band management IP")
+        parser.add_argument('--asset-tag', dest='asset_tag', default=None,
+                help="asset tag")
 
-    subparser.add_argument('--notes', dest='notes', default=None,
-            help="free-form host notes")
+        parser.add_argument('--location', dest='location', default=None,
+                help="system location")
 
-    return subparser
+        parser.add_argument('--oob-ip', dest='oob_ip', default=None,
+                help="out-of-band management IP")
 
-def process_args(subparser, args):
-    if not args.hostname:
-        subparser.error("a hostname is required")
+        parser.add_argument('--notes', dest='notes', default=None,
+                help="free-form host notes")
 
-def main(inv, args):
-    rv = inv.system_create(args.hostname)
-    util.handle_error(rv)
+        return parser
 
-    id = rv['data']['id']
-    data = {}
-    for k in 'serial asset_tag location oob_ip notes'.split():
-        if hasattr(args, k) and getattr(args, k) is not None:
-            data[k] = getattr(args, k)
-    rv = inv.system_update(id, data)
-    util.handle_error(rv)
+    def run(self, inv):
+        rv = inv.system_create(self.opts.hostname)
+        util.handle_error(rv)
 
-    print "Created."
+        id = rv['data']['id']
+        data = {}
+        for k in 'serial asset_tag location oob_ip notes'.split():
+            if hasattr(self.opts, k) and getattr(self.opts, k) is not None:
+                data[k] = getattr(self.opts, k)
+        rv = inv.system_update(id, data)
+        util.handle_error(rv)
+
+        print "Created; system ID is %d" % (id,)

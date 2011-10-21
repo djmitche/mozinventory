@@ -23,54 +23,41 @@
 # you do not delete the provisions above, a recipient may use your version of
 # this file under either the MPL or the GPLv2 License.
 
-import sys
-from mozinventory.scripts import util
+import argparse
+from mozinventory.scripts import util, base
 
-def setup_argparse(subparsers):
-    subparser = subparsers.add_parser('get', help='get information about host')
+class Get(base.Subcommand):
 
-    subparser.add_argument('hostname',
-            help="hostname to get information for")
+    oneline = "Get information about a system, specified by hostname"
 
-    subparser.add_argument('--search-hostname', dest='search_hostname',
-            default=False, action='store_true',
-            help="search for hosts containing the hostname as a substring")
+    def get_parser(self):
+        parser = argparse.ArgumentParser(description=self.oneline,
+                formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    return subparser
+        parser.add_argument('hostname',
+                help="hostname to get information for")
 
-def process_args(subparser, args):
-    if not args.hostname and not args_search_hostname:
-        subparser.error("a hostname is required or --search-hostname argument is required")
+        return parser
 
-def main(inv, args):
-    if args.search_hostname:
-        rv = inv.system_search_hostname(args.search_hostname)
-    else:
-        rv = inv.system_read(args.hostname)
+    def run(self, inv):
+        rv = inv.system_read(self.opts.hostname)
+        util.handle_error(rv)
 
-    util.handle_error(rv)
-
-    if args.search_hostname:
-        data = rv['data']
-        if not data:
-            print >>sys.stderr, "not found."
-            sys.exit(1)
-    else:
         data = [ rv['data'] ]
 
-    keys = dict(
-        serial = 'serial',
-        asset_tag = 'asset_tag',
-        rack_order = 'rack_order',
-        patch_panel_port = 'patch_panel_port',
-        oob_ip = 'oob_ip',
-        #allocation = 'allocation', -- bug 688627
-        switch_ports = 'switch_ports',
-        oob_switch_port = 'oob_switch_port',
-        notes = 'notes',
-    )
-    for host in data:
-        print "-- %s --" % host['hostname']
-        for key, name in sorted(keys.items()):
-            if key in host and host[key]:
-                print "%s=%s" % (name, host[key])
+        keys = dict(
+            serial = 'serial',
+            asset_tag = 'asset_tag',
+            rack_order = 'rack_order',
+            patch_panel_port = 'patch_panel_port',
+            oob_ip = 'oob_ip',
+            #allocation = 'allocation', -- bug 688627
+            switch_ports = 'switch_ports',
+            oob_switch_port = 'oob_switch_port',
+            notes = 'notes',
+        )
+        for host in data:
+            print "-- %s --" % host['hostname']
+            for key, name in sorted(keys.items()):
+                if key in host and host[key]:
+                    print "%s=%s" % (name, host[key])

@@ -104,27 +104,3 @@ class test(util.ScriptTestCase):
                 rack_order=25.03
                 serial=lkajsdfliG5
                 switch_ports=sw-8a.scl1:23""").strip())
-
-    def test_search(self):
-        self.inv.system_hostname_search.return_value = (
-                dict(success=True, data=[ host_data, host2_data ]))
-        stdout = []
-        with util.capture_stdout(stdout):
-            self.run_script('get', '--search', 'host')
-        stdout = ''.join(stdout).strip()
-
-        self.inv.system_hostname_search.assert_called_with('host')
-        nose.tools.eq_(stdout, textwrap.dedent("""\
-                -- somehost --
-                asset_tag=113075
-                oob_ip=1.1.9.37
-                rack_order=25.03
-                serial=lkajsdfliG5
-                switch_ports=sw-8a.scl1:23
-                -- otherhost --
-                asset_tag=9359393
-                oob_ip=1.1.9.37
-                rack_order=25.03
-                serial=lkajsdfliG5
-                switch_ports=sw-8a.scl1:23
-                """).strip())

@@ -23,32 +23,27 @@
 # you do not delete the provisions above, a recipient may use your version of
 # this file under either the MPL or the GPLv2 License.
 
-import argparse
-from mozinventory.scripts import util, base
+class Subcommand(object):
 
-class Get(base.Subcommand):
+    # a one-line summary of the command, for --help-commands
+    oneline = "???"
 
-    oneline = "Get information about a system rack"
+    def __init__(self, command, opts):
+        self.command = command
+        self.opts = opts
+
 
     def get_parser(self):
-        parser = argparse.ArgumentParser(description=self.oneline,
-                formatter_class=argparse.RawDescriptionHelpFormatter)
-
-        parser.add_argument('systemrack',
-                help="system rack to get information for (name)")
-
-        return parser
+        # construct an argparse parser for the subcommand's options
+        raise NotImplementedError
 
 
     def process_options(self):
-        if not self.opts.systemrack:
-            self.error("a system rack is required")
+        # process any options in self.opts, if necessary
+        pass
 
 
     def run(self, inv):
-        rv = inv.systemrack_read(self.opts.systemrack)
+        # do the command's actions
+        raise NotImplementedError
 
-        util.handle_error(rv)
-
-        data = rv['data']
-        util.generic_output(data)

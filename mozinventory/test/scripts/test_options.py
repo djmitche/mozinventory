@@ -2,12 +2,12 @@
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
 # http://www.mozilla.org/MPL/
-# 
+#
 # Software distributed under the License is distributed on an "AS IS"
 # basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
 # License for the specific language governing rights and limitations
 # under the License.
-# 
+#
 # The Original Code is mozinventory
 #
 # The Initial Developer of the Original Code is Rob Tucker.  Portions created
@@ -23,32 +23,23 @@
 # you do not delete the provisions above, a recipient may use your version of
 # this file under either the MPL or the GPLv2 License.
 
-import argparse
-from mozinventory.scripts import util, base
+import nose.tools
+import unittest
+from mozinventory.scripts import options
 
-class Get(base.Subcommand):
+class test_get_object(unittest.TestCase):
 
-    oneline = "Get information about a system rack"
+    def setUp(self):
+        self.opts = options.Options()
 
-    def get_parser(self):
-        parser = argparse.ArgumentParser(description=self.oneline,
-                formatter_class=argparse.RawDescriptionHelpFormatter)
+    def test_fails(self):
+        self.assertRaises(ImportError, lambda :
+                self.opts.get_object("mozinventory.does.not.exist"))
 
-        parser.add_argument('systemrack',
-                help="system rack to get information for (name)")
+    def test_no_pkg(self):
+        nose.tools.eq_(self.opts.get_object("mozinventory.just_here_for_tests"),
+                       "hi")
 
-        return parser
-
-
-    def process_options(self):
-        if not self.opts.systemrack:
-            self.error("a system rack is required")
-
-
-    def run(self, inv):
-        rv = inv.systemrack_read(self.opts.systemrack)
-
-        util.handle_error(rv)
-
-        data = rv['data']
-        util.generic_output(data)
+    def test_with_pkg(self):
+        nose.tools.eq_(self.opts.get_object("mozinventory.scripts.options.Options"),
+                       options.Options)

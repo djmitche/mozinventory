@@ -29,7 +29,7 @@ from mozinventory.test.scripts import util
 
 class test(util.ScriptTestCase):
 
-    script_module = add
+    subcommand_class = add.Add
 
     def test_simple(self):
         self.inv.system_create.return_value = (

@@ -24,27 +24,20 @@
 # this file under either the MPL or the GPLv2 License.
 
 import mock
-import argparse
 import unittest
 import contextlib
+from mozinventory.scripts import options
 
 class ScriptTestCase(unittest.TestCase):
 
-    # set this in subclasses so we know which module to test
-    script_module = None
-
     def setUp(self):
-        self.parser = p = argparse.ArgumentParser()
-        self.subparsers = sps = p.add_subparsers(title='subcommands')
-        self.subparser = sp = self.script_module.setup_argparse(sps)
-        sp.set_defaults(module=self.script_module, subparser=sp)
-
+        self.opts = options.Options()
         self.inv = mock.Mock(name="MozillaInventory")
 
     def run_script(self, *args):
-        args = self.parser.parse_args(list(args))
-        self.script_module.process_args(self.subparser, args)
-        self.script_module.main(self.inv, args)
+        self.opts.cmdline = list(args)
+        subcommand = self.opts.parse_subcommand()
+        subcommand.run(self.inv)
 
 @contextlib.contextmanager
 def capture_stdout(dest):
