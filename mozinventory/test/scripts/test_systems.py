@@ -23,9 +23,10 @@
 # you do not delete the provisions above, a recipient may use your version of
 # this file under either the MPL or the GPLv2 License.
 
-import nose.tools
+import mock
 import textwrap
-from mozinventory.scripts import get
+import nose.tools
+from mozinventory.scripts import systems
 from mozinventory.test.scripts import util
 
 host_data = {
@@ -84,9 +85,51 @@ host2_data = host_data.copy()
 host2_data['hostname'] = 'otherhost'
 host2_data['asset_tag'] = '9359393'
 
+
+class test_Add(util.ScriptTestCase):
+
+    subcommand_class = systems.Add
+
+    def test_simple(self):
+        self.inv.system_create.return_value = (
+                dict(success=True, data=dict(id=298)))
+        self.inv.system_update.return_value = (
+                dict(success=True))
+        self.run_script('add', 'mynewhost')
+        self.inv.system_create.assert_called_with('mynewhost')
+        self.inv.system_update.assert_called_with(298, {})
+
+    def test_args(self):
+        self.inv.system_create.return_value = (
+                dict(success=True, data=dict(id=298)))
+        self.inv.system_update.return_value = (
+                dict(success=True))
+        self.run_script('add', 'mynewhost',
+                '--serial', '1234',
+                '--asset-tag', '60000',
+                '--location', 'portugal',
+                '--oob-ip', '127.0.0.1',
+                '--notes', 'note this!')
+        self.inv.system_create.assert_called_with('mynewhost')
+        self.inv.system_update.assert_called_with(298,
+                dict(serial='1234', asset_tag='60000', location='portugal',
+                     oob_ip='127.0.0.1', notes='note this!'))
+
+    def test_fail_create(self):
+        self.inv.system_create.return_value = (
+                dict(success=False, status_code='404'))
+
+        with mock.patch('mozinventory.scripts.util.handle_error') as handle_error:
+            handle_error.side_effect = SystemExit
+            self.assertRaises(SystemExit, lambda :
+                self.run_script('add', 'mynewhost'))
+
+        self.inv.system_create.assert_called_with('mynewhost')
+
+
 class test(util.ScriptTestCase):
 
-    script_module = get
+    subcommand_class = systems.Get
 
     def test_simple(self):
         self.inv.system_read.return_value = (

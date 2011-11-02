@@ -30,10 +30,13 @@ import textwrap
 import ConfigParser
 
 subcommands = {
-    'get' : 'mozinventory.scripts.get.Get',
-    'search' : 'mozinventory.scripts.search.Search',
-    'add' : 'mozinventory.scripts.add.Add',
-    'systemrack-get' : 'mozinventory.scripts.systemrack_get.Get',
+
+    # systems
+    'get' : 'mozinventory.scripts.systems.Get',
+    'search' : 'mozinventory.scripts.systems.Search',
+    'add' : 'mozinventory.scripts.systems.Add',
+
+    'systemrack-get' : 'mozinventory.scripts.systemracks.Get',
 }
 
 class Options(argparse.Namespace):
