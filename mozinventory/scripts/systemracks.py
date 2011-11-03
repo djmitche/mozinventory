@@ -23,25 +23,32 @@
 # you do not delete the provisions above, a recipient may use your version of
 # this file under either the MPL or the GPLv2 License.
 
-from mozinventory.scripts import util
+import argparse
+from mozinventory.scripts import util, base
 
-def setup_argparse(subparsers):
-    subparser = subparsers.add_parser('systemrack_get', help='get information about host')
+class Get(base.Subcommand):
 
-    subparser.add_argument('systemrack',
-            help="system rack to get information for")
+    oneline = "Get information about a system rack"
+
+    def get_parser(self):
+        parser = argparse.ArgumentParser(description=self.oneline,
+                formatter_class=argparse.RawDescriptionHelpFormatter)
+
+        parser.add_argument('systemrack',
+                help="system rack to get information for (name)")
+
+        return parser
 
 
-    return subparser
+    def process_options(self):
+        if not self.opts.systemrack:
+            self.error("a system rack is required")
 
-def process_args(subparser, args):
-    if not args.systemrack:
-        subparser.error("a system rack is required")
 
-def main(inv, args):
-    rv = inv.systemrack_read(args.systemrack)
+    def run(self, inv):
+        rv = inv.systemrack_read(self.opts.systemrack)
 
-    util.handle_error(rv)
+        util.handle_error(rv)
 
-    data = rv['data']
-    util.generic_output(data)
+        data = rv['data']
+        util.generic_output(data)

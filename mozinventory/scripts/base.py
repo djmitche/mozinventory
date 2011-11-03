@@ -23,33 +23,27 @@
 # you do not delete the provisions above, a recipient may use your version of
 # this file under either the MPL or the GPLv2 License.
 
-import mock
-import unittest
-import contextlib
-from mozinventory.scripts import options
+class Subcommand(object):
 
-class ScriptTestCase(unittest.TestCase):
+    # a one-line summary of the command, for --help-commands
+    oneline = "???"
 
-    def setUp(self):
-        self.opts = options.Options()
-        self.inv = mock.Mock(name="MozillaInventory")
+    def __init__(self, command, opts):
+        self.command = command
+        self.opts = opts
 
-    def run_script(self, *args):
-        self.opts.cmdline = list(args)
-        subcommand = self.opts.parse_subcommand()
-        subcommand.run(self.inv)
 
-@contextlib.contextmanager
-def capture_stdout(dest):
-    """
-    Called as a context manager, this will capture stdout into a list named
-    'dest' -- at least the data written by `sys.stdout.write()`.
-    """
-    dest[:] = []
-    with mock.patch('sys.stdout.write') as write:
-        def keep(s):
-            dest.append(s)
-        write.side_effect = keep
+    def get_parser(self):
+        # construct an argparse parser for the subcommand's options
+        raise NotImplementedError
 
-        # do the body of the with statement
-        yield
+
+    def process_options(self):
+        # process any options in self.opts, if necessary
+        pass
+
+
+    def run(self, inv):
+        # do the command's actions
+        raise NotImplementedError
+

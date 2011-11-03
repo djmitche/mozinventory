@@ -24,80 +24,92 @@
 # this file under either the MPL or the GPLv2 License.
 
 import sys
-from mozinventory.scripts import util
+import argparse
+from mozinventory.scripts import util, base
 
-def setup_argparse(subparsers):
-    subparser = subparsers.add_parser('search', help='get information for host by searching by parameters')
+class Search(base.Subcommand):
 
-    subparser.add_argument('--asset-tag', dest='asset_tag', default=None,
-            help="asset tag number of system")
-            
-    subparser.add_argument('--serial', dest='serial', default=None,
-            help="serial number of system")
+    oneline = "Get information about multiple systems"
 
-    subparser.add_argument('--oob-ip', dest='oob_ip', default=None,
-            help="oob ip address of system")
+    def get_parser(self):
+        parser = argparse.ArgumentParser(description=self.oneline,
+                formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    subparser.add_argument('--system-rack-id', dest='system_rack_id', default=None,
-            help="system_rack_id of system")
+        parser.add_argument('--asset-tag', dest='asset_tag', default=None,
+                help="asset tag number of system")
+                
+        parser.add_argument('--serial', dest='serial', default=None,
+                help="serial number of system")
 
-    subparser.add_argument('--rack-order', dest='rack_order', default=None,
-            help="rack_order of system")
-    return subparser
+        parser.add_argument('--oob-ip', dest='oob_ip', default=None,
+                help="oob ip address of system")
 
-def process_args(subparser, args):
-    if not args.asset_tag and not args.oob_ip and not args.serial and not args.system_rack_id and not args.rack_order:
-        subparser.error("a search criteria is required")
+        parser.add_argument('--system-rack-id', dest='system_rack_id', default=None,
+                help="system_rack_id of system")
 
-def main(inv, args):
-    criteria = {}
-    has_search = False
-    if args.asset_tag:
-        has_search = True
-        criteria['asset_tag'] = args.asset_tag
+        parser.add_argument('--rack-order', dest='rack_order', default=None,
+                help="rack_order of system")
+        return parser
 
-    if args.serial:
-        has_search = True
-        criteria['serial'] = args.serial
 
-    if args.system_rack_id:
-        has_search = True
-        criteria['system_rack_id'] = args.system_rack_id
+    def process_options(self):
+        if not self.opts.asset_tag and \
+           not self.opts.oob_ip and \
+           not self.opts.serial and \
+           not self.opts.system_rack_id and \
+           not self.opts.rack_order:
+            self.error("a search criterion is required")
 
-    if args.rack_order:
-        has_search = True
-        criteria['rack_order'] = args.rack_order
 
-    if args.oob_ip:
-        has_search = True
-        criteria['oob_ip'] = args.oob_ip
+    def run(self, inv):
+        criteria = {}
+        has_search = False
+        if self.opts.asset_tag:
+            has_search = True
+            criteria['asset_tag'] = self.opts.asset_tag
 
-    if has_search:
-        rv = inv.system_search(criteria)
+        if self.opts.serial:
+            has_search = True
+            criteria['serial'] = self.opts.serial
 
-    util.handle_error(rv)
+        if self.opts.system_rack_id:
+            has_search = True
+            criteria['system_rack_id'] = self.opts.system_rack_id
 
-    if has_search:
-        data = rv['data']
-        if not data:
-            print >>sys.stderr, "not found."
-            sys.exit(1)
-    else:
-        data = [ rv['data'] ]
+        if self.opts.rack_order:
+            has_search = True
+            criteria['rack_order'] = self.opts.rack_order
 
-    keys = dict(
-        serial = 'serial',
-        asset_tag = 'asset_tag',
-        rack_order = 'rack_order',
-        patch_panel_port = 'patch_panel_port',
-        oob_ip = 'oob_ip',
-        #allocation = 'allocation', -- bug 688627
-        switch_ports = 'switch_ports',
-        oob_switch_port = 'oob_switch_port',
-        notes = 'notes',
-    )
-    for host in data:
-        print "-- %s --" % host['hostname']
-        for key, name in sorted(keys.items()):
-            if key in host and host[key]:
-                print "%s=%s" % (name, host[key])
+        if self.opts.oob_ip:
+            has_search = True
+            criteria['oob_ip'] = self.opts.oob_ip
+
+        if has_search:
+            rv = inv.system_search(criteria)
+
+        util.handle_error(rv)
+
+        if has_search:
+            data = rv['data']
+            if not data:
+                print >>sys.stderr, "not found."
+                sys.exit(1)
+        else:
+            data = [ rv['data'] ]
+
+        keys = dict(
+            serial = 'serial',
+            asset_tag = 'asset_tag',
+            rack_order = 'rack_order',
+            patch_panel_port = 'patch_panel_port',
+            oob_ip = 'oob_ip',
+            #allocation = 'allocation', -- bug 688627
+            switch_ports = 'switch_ports',
+            oob_switch_port = 'oob_switch_port',
+            notes = 'notes',
+        )
+        for host in data:
+            print "-- %s --" % host['hostname']
+            for key, name in sorted(keys.items()):
+                if key in host and host[key]:
+                    print "%s=%s" % (name, host[key])
