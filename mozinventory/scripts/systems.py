@@ -24,11 +24,89 @@
 # this file under either the MPL or the GPLv2 License.
 
 import sys
+import csv
 import argparse
 from mozinventory.scripts import util, base
 
+class SystemMixin(object):
 
-class Get(base.Subcommand):
+    system_columns = [
+        'hostname',
+        'serial',
+        'asset_tag',
+        'rack_order',
+        'patch_panel_port',
+        'oob_ip',
+        'switch_ports',
+        'oob_switch_ports',
+        'notes',
+    ]
+
+    def add_display_opts(self, parser):
+        group = parser.add_argument_group('output format arguments')
+
+        mutex = group.add_mutually_exclusive_group()
+
+        mutex.add_argument('--csv', dest='output_fn', action='store_const', 
+                const=SystemMixin.display_csv,
+                help='Produce output in CSV format')
+
+        mutex.add_argument('--human', dest='output_fn', action='store_const', 
+                const=SystemMixin.display_human,
+                help='Produce output in human-readable format (default)')
+
+        mutex.add_argument('--names', dest='output_fn', action='store_const', 
+                const=SystemMixin.display_names,
+                help='Output a newline-separated list of hostnames, suitable for xargs')
+
+        group.add_argument('--no-header', dest='output_no_header', action='store_true',
+                help='Do not output a header (with --csv)')
+
+        default_fields = ','.join(self.system_columns)
+        group.add_argument('--fields', dest='output_fields',
+                default=default_fields,
+                help='comma-separated list of fields to display; default is %s'
+                                % default_fields)
+
+
+    def display_hosts(self, hosts):
+        return (self.opts.output_fn or SystemMixin.display_human)(self, hosts)
+
+
+    def display_csv(self, hosts):
+        fields = self.opts.output_fields.split(',')
+        if self.opts.output_no_header:
+            writer = csv.writer(sys.stdout)
+
+            for host in hosts:
+                writer.writerow(tuple(host[f] for f in fields))
+        else:
+            writer = csv.DictWriter(sys.stdout, fields)
+
+            # header row
+            writer.writerow(dict((f, f) for f in fields))
+            for host in hosts:
+                writer.writerow(dict((f, host.get(f, '')) for f in fields))
+
+
+    def display_human(self, hosts):
+        fields = self.opts.output_fields.split(',')
+        max_field = max(len(f) for f in fields)
+        for host in hosts:
+            print host['hostname']
+            for key in fields:
+                if key == 'hostname': continue
+                if key in host and host[key]:
+                    print "  %-*s: %s" % (max_field, key, host[key])
+
+
+    def display_names(self, hosts):
+        for host in hosts:
+            print host['hostname']
+
+
+
+class Get(base.Subcommand, SystemMixin):
 
     oneline = "Get information about a system, specified by hostname"
 
@@ -39,33 +117,18 @@ class Get(base.Subcommand):
         parser.add_argument('hostname',
                 help="hostname to get information for")
 
+        self.add_display_opts(parser)
+
         return parser
 
     def run(self, inv):
         rv = inv.system_read(self.opts.hostname)
         util.handle_error(rv)
 
-        data = [ rv['data'] ]
-
-        keys = dict(
-            serial = 'serial',
-            asset_tag = 'asset_tag',
-            rack_order = 'rack_order',
-            patch_panel_port = 'patch_panel_port',
-            oob_ip = 'oob_ip',
-            #allocation = 'allocation', -- bug 688627
-            switch_ports = 'switch_ports',
-            oob_switch_port = 'oob_switch_port',
-            notes = 'notes',
-        )
-        for host in data:
-            print "-- %s --" % host['hostname']
-            for key, name in sorted(keys.items()):
-                if key in host and host[key]:
-                    print "%s=%s" % (name, host[key])
+        self.display_hosts([ rv['data'] ])
 
 
-class Search(base.Subcommand):
+class Search(base.Subcommand, SystemMixin):
 
     oneline = "Get information about multiple systems"
 
@@ -73,6 +136,9 @@ class Search(base.Subcommand):
         parser = argparse.ArgumentParser(description=self.oneline,
                 formatter_class=argparse.RawDescriptionHelpFormatter)
 
+        parser.add_argument('--hostname-fragment', dest='hostname_fragment', default=None,
+                help="a fragment of the hostname (substring match)")
+                
         parser.add_argument('--asset-tag', dest='asset_tag', default=None,
                 help="asset tag number of system")
                 
@@ -87,6 +153,9 @@ class Search(base.Subcommand):
 
         parser.add_argument('--rack-order', dest='rack_order', default=None,
                 help="rack_order of system")
+
+        self.add_display_opts(parser)
+
         return parser
 
 
@@ -95,62 +164,54 @@ class Search(base.Subcommand):
            not self.opts.oob_ip and \
            not self.opts.serial and \
            not self.opts.system_rack_id and \
-           not self.opts.rack_order:
-            self.error("a search criterion is required")
+           not self.opts.rack_order and \
+           not self.opts.hostname_fragment:
+            self.opts.error("a search criterion is required")
 
 
     def run(self, inv):
         criteria = {}
-        has_search = False
+        use_search = False
         if self.opts.asset_tag:
-            has_search = True
+            use_search = True
             criteria['asset_tag'] = self.opts.asset_tag
 
         if self.opts.serial:
-            has_search = True
+            use_search = True
             criteria['serial'] = self.opts.serial
 
         if self.opts.system_rack_id:
-            has_search = True
+            use_search = True
             criteria['system_rack_id'] = self.opts.system_rack_id
 
         if self.opts.rack_order:
-            has_search = True
+            use_search = True
             criteria['rack_order'] = self.opts.rack_order
 
         if self.opts.oob_ip:
-            has_search = True
+            use_search = True
             criteria['oob_ip'] = self.opts.oob_ip
 
-        if has_search:
+        if use_search:
             rv = inv.system_search(criteria)
+        else:
+            rv = inv.system_hostname_search(self.opts.hostname_fragment)
 
         util.handle_error(rv)
 
-        if has_search:
-            data = rv['data']
-            if not data:
-                print >>sys.stderr, "not found."
-                sys.exit(1)
-        else:
-            data = [ rv['data'] ]
+        data = rv['data']
 
-        keys = dict(
-            serial = 'serial',
-            asset_tag = 'asset_tag',
-            rack_order = 'rack_order',
-            patch_panel_port = 'patch_panel_port',
-            oob_ip = 'oob_ip',
-            #allocation = 'allocation', -- bug 688627
-            switch_ports = 'switch_ports',
-            oob_switch_port = 'oob_switch_port',
-            notes = 'notes',
-        )
-        for host in data:
-            print "-- %s --" % host['hostname']
-            for key, name in sorted(keys.items()):
-                if key in host and host[key]:
-                    print "%s=%s" % (name, host[key])
+        # if we used system_search, but had a hostname fragment, filter
+        # that client-side
+        if use_search and self.opts.hostname_fragment:
+            frag = self.opts.hostname_fragment
+            data = [ h for h in data if frag in h['hostname'] ]
+
+        if not data:
+            print >>sys.stderr, "not found."
+            sys.exit(1)
+
+        self.display_hosts(data)
 
 
 class Add(base.Subcommand):
