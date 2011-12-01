@@ -69,6 +69,13 @@ class SystemMixin(object):
                                 % default_fields)
 
 
+    def host_field(self, host, key):
+        if key == 'system_rack':
+            return host[key]['name']
+        else:
+            return host.get(key, '')
+
+
     def display_hosts(self, hosts):
         return (self.opts.output_fn or SystemMixin.display_human)(self, hosts)
 
@@ -85,19 +92,22 @@ class SystemMixin(object):
 
             # header row
             writer.writerow(dict((f, f) for f in fields))
+            hf = self.host_field
             for host in hosts:
-                writer.writerow(dict((f, host.get(f, '')) for f in fields))
+                writer.writerow(dict((f, hf(host, f)) for f in fields))
 
 
     def display_human(self, hosts):
         fields = self.opts.output_fields.split(',')
         max_field = max(len(f) for f in fields)
+        hf = self.host_field
         for host in hosts:
             print host['hostname']
             for key in fields:
                 if key == 'hostname': continue
-                if key in host and host[key]:
-                    print "  %-*s: %s" % (max_field, key, host[key])
+                val = hf(host, key)
+                if key in host and val:
+                    print "  %-*s: %s" % (max_field, key, val)
 
 
     def display_names(self, hosts):
