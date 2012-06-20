@@ -35,15 +35,15 @@ def main():
     opts.parse_config()
     opts.parse_global_options(sys.argv[1:])
 
+    subcmd = opts.parse_subcommand()
+    if not subcmd:
+        opts.show_help()
+
     # ensure we have a password
     if not opts.password:
         opts.password = getpass.getpass("LDAP Password for %s: " % opts.username)
 
     inv = MozillaInventory(opts.username, opts.password, opts.apiurl, debug=opts.debug)
-
-    subcmd = opts.parse_subcommand()
-    if not subcmd:
-        opts.show_help()
 
     subcmd.run(inv)
 
