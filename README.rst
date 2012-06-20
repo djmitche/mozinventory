@@ -26,7 +26,7 @@ To upgrade to a newer version::
 
 The ``mozinventory`` script should now be in your path::
 
-    $ mozinventory --help
+    $ mozinventory --help-commands
 
 User Installation
 =================
@@ -51,9 +51,9 @@ As above, add the ``-U`` flag to upgrade later.  The ``mozinventory`` script
 will be located in the virtualenv.  You can add this directory to your
 ``$PATH``, create a symlink, or just use the explicit path::
 
-    $ ~/virtualenv/bin/mozinventory --help
+    $ ~/virtualenv/bin/mozinventory --help-commands
 
 Usage
 -----
 
-Refer to the ``--help`` command for usage information.
+Refer to the ``--help-commands`` command for usage information.
