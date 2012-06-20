@@ -41,12 +41,8 @@ subcommands = {
 
 class Options(argparse.Namespace):
 
-    description = textwrap.dedent("""\
-    An interface to the Mozilla inventory tool.
 
-    This utility requires access to a compatible inventory server, and a username
-    and password. 
-
+    config_help = textwrap.dedent("""\
     Configuration is in ~/.mozinventoryrc.  This file must have mode 0700.  It is
     an ini-style file supporting the following arguments:
 
@@ -59,6 +55,13 @@ class Options(argparse.Namespace):
 
         [debug]
         api - set to '1' to debug the inventory API interface
+    """)
+
+    description = textwrap.dedent("""\
+    An interface to the Mozilla inventory tool.
+
+    This utility requires access to a compatible inventory server, and a username
+    and password. 
     """)
 
     def __init__(self):
@@ -193,6 +196,8 @@ class Options(argparse.Namespace):
             descriptions.append((n, subcommand.oneline))
 
         max_name = max(len(n) for n in names)
+        print self.config_help
+        print ""
         print "Available subcommands:\n"
         for n, d in descriptions:
             print "%s %-*s - %s" % (self.prog, max_name, n, d)

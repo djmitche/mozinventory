@@ -53,6 +53,22 @@ will be located in the virtualenv.  You can add this directory to your
 
     $ ~/virtualenv/bin/mozinventory --help-commands
 
+Configuration
+=============
+
+Configuration is in ~/.mozinventoryrc.  This file must have mode 0700.  It is
+an ini-style file supporting the following arguments:
+
+[api]
+url - the base API URL
+
+[auth]
+username - for Mozilla, the long LDAP form
+password - password for username
+
+[debug]
+api - set to '1' to debug the inventory API interface
+
 Usage
 -----
 
